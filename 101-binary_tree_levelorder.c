@@ -1,49 +1,66 @@
 #include "binary_trees.h"
-
 /**
- * bst_insert -This function Inserts a value in a Binary Search Tree.
- * @tree: A double pointer to the root node of the BST to insert the value.
- * @value: The value to store in the node to be inserted.
- *
- * Return: A pointer to the created node, or NULL on failure.
+ * binary_tree_height - measures the height of a binary tree.
+ *@tree: pointer to the root node of the tree to measure the height.
+ * Return: if tree is NULL, your function must return 0.
  */
-bst_t *bst_insert(bst_t **tree, int value)
+size_t binary_tree_height(const binary_tree_t *tree)
 {
-	bst_t *curr, *new;
-
-	if (tree != NULL)
+	if (tree)
 	{
-		curr = *tree;
+		int left = 0, right = 0;
 
-		if (curr == NULL)
+		if (tree->right)
+			right = 1 + binary_tree_height(tree->right);
+		if (tree->left)
+			left = 1 + binary_tree_height(tree->left);
+		if (left > right)
+			return (left);
+		else
+			return (right);
+	}
+	else
+		return (0);
+}
+/**
+ * print_at_level - print node, especific level
+ * @tree: pointer to the root node of the tree to traverse
+ * @func: pointer to a function to call for each node.
+ * @level: level to print
+ */
+void print_at_level(const binary_tree_t *tree, void (*func)(int), int level)
+{
+	if (tree && func)
+	{
+		if (level == 1)
+			func(tree->n);
+		else
 		{
-			new = binary_tree_node(curr, value);
-			if (new == NULL)
-				return (NULL);
-			return (*tree = new);
-		}
-
-		if (value < curr->n) /* insert in left subtree */
-		{
-			if (curr->left != NULL)
-				return (bst_insert(&curr->left, value));
-
-			new = binary_tree_node(curr, value);
-			if (new == NULL)
-				return (NULL);
-			return (curr->left = new);
-		}
-		if (value > curr->n) /* insert in right subtree */
-		{
-			if (curr->right != NULL)
-				return (bst_insert(&curr->right, value));
-
-			new = binary_tree_node(curr, value);
-			if (new == NULL)
-				return (NULL);
-			return (curr->right = new);
+			print_at_level(tree->left, func, level - 1);
+			print_at_level(tree->right, func, level - 1);
 		}
 	}
-	return (NULL);
+
+}
+
+/**
+ * binary_tree_levelorder - goes through a binary tree in level-order traversal
+ * @tree: pointer to the root node of the tree to traverse
+ * @func: pointer to a function to call for each node.
+ */
+void binary_tree_levelorder(const binary_tree_t *tree, void (*func)(int))
+{
+	size_t h = 0, i = 1;
+
+	if (tree && func)
+	{
+		h = binary_tree_height(tree);
+		while (i <= h + 1)
+		{
+			print_at_level(tree, func, i);
+			i++;
+		}
+	}
+
 }
 
