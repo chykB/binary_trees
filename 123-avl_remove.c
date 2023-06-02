@@ -1,140 +1,135 @@
 #include "binary_trees.h"
-#include <stdlib.h>
 
 /**
- * tree_height - measures the height of a binary tree
- * @tree: pointer to the root node of the tree to measure the height
- *
- * Return: Height or 0 if tree is NULL
+ * bal - Measures balance factor of a AVL
+ * @tree: tree to go through
+ * Return: balanced factor
  */
-size_t tree_height(const heap_t *tree)
+void bal(avl_t **tree)
 {
-	size_t height_l = 0;
-	size_t height_r = 0;
+	int bval;
 
-	if (!tree)
-		return (0);
-
-	if (tree->left)
-		height_l = 1 + tree_height(tree->left);
-
-	if (tree->right)
-		height_r = 1 + tree_height(tree->right);
-
-	if (height_l > height_r)
-		return (height_l);
-	return (height_r);
-}
-/**
- * tree_size_h - measures the sum of heights of a binary tree
- * @tree: pointer to the root node of the tree to measure the height
- *
- * Return: Height or 0 if tree is NULL
- */
-size_t tree_size_h(const binary_tree_t *tree)
-{
-	size_t height_l = 0;
-	size_t height_r = 0;
-
-	if (!tree)
-		return (0);
-
-	if (tree->left)
-		height_l = 1 + tree_size_h(tree->left);
-
-	if (tree->right)
-		height_r = 1 + tree_size_h(tree->right);
-
-	return (height_l + height_r);
-}
-
-/**
- * _preorder - goes through a binary tree using pre-order traversal
- * @tree: pointer to the root node of the tree to traverse
- * @node: will be last note in traverse
- * @height: height of tree
- *
- * Return: No Return
- */
-void _preorder(heap_t *tree, heap_t **node, size_t height)
-{
-	if (!tree)
+	if (tree == NULL || *tree == NULL)
 		return;
-
-	if (!height)
-		*node = tree;
-	height--;
-
-	_preorder(tree->left, node, height);
-	_preorder(tree->right, node, height);
-}
-
-/**
- * heapify - heapifies max binary heap
- * @root: pointer to binary heap
- */
-void heapify(heap_t *root)
-{
-	int value;
-	heap_t *tmp1, *tmp2;
-
-	if (!root)
+	if ((*tree)->left == NULL && (*tree)->right == NULL)
 		return;
-
-	tmp1 = root;
-
-	while (1)
-	{
-		if (!tmp1->left)
-			break;
-		if (!tmp1->right)
-			tmp2 = tmp1->left;
-		else
-		{
-			if (tmp1->left->n > tmp1->right->n)
-				tmp2 = tmp1->left;
-			else
-				tmp2 = tmp1->right;
-		}
-		if (tmp1->n > tmp2->n)
-			break;
-		value = tmp1->n;
-		tmp1->n = tmp2->n;
-		tmp2->n = value;
-		tmp1 = tmp2;
-	}
+	bal(&(*tree)->left);
+	bal(&(*tree)->right);
+	bval = binary_tree_balance((const binary_tree_t *)*tree);
+	if (bval > 1)
+		*tree = binary_tree_rotate_right((binary_tree_t *)*tree);
+	else if (bval < -1)
+		*tree = binary_tree_rotate_left((binary_tree_t *)*tree);
 }
-
 /**
- * heap_extract - extracts the root node from a Max Binary Heap
- * @root: pointer to the heap root
- * Return: value of extracted node
- **/
-int heap_extract(heap_t **root)
+ * successor - get the next successor i mean the min node in the right subtree
+ * @node: tree to check
+ * Return: the min value of this tree
+ */
+int successor(bst_t *node)
 {
-	int value;
-	heap_t *heap_r, *node;
+	int left = 0;
 
-	if (!root || !*root)
-		return (0);
-	heap_r = *root;
-	value = heap_r->n;
-	if (!heap_r->left && !heap_r->right)
+	if (node == NULL)
 	{
-		*root = NULL;
-		free(heap_r);
-		return (value);
+		return (0);
 	}
-
-	_preorder(heap_r, &node, tree_height(heap_r));
-
-	heap_r->n = node->n;
-	if (node->parent->right)
-		node->parent->right = NULL;
 	else
-		node->parent->left = NULL;
-	free(node);
-	heapify(heap_r);
-	*root = heap_r;
-	return (value);
+	{
+		left = successor(node->left);
+		if (left == 0)
+		{
+			return (node->n);
+		}
+		return (left);
+	}
+
+}
+/**
+ *remove_type - function that removes a node depending of its children
+ *@root: node to remove
+ *Return: 0 if it has no children or other value if it has
+ */
+int remove_type(bst_t *root)
+{
+	int new_value = 0;
+
+	if (!root->left && !root->right)
+	{
+		if (root->parent->right == root)
+			root->parent->right = NULL;
+		else
+			root->parent->left = NULL;
+		free(root);
+		return (0);
+	}
+	else if ((!root->left && root->right) || (!root->right && root->left))
+	{
+		if (!root->left)
+		{
+			if (root->parent->right == root)
+				root->parent->right = root->right;
+			else
+				root->parent->left = root->right;
+			root->right->parent = root->parent;
+		}
+		if (!root->right)
+		{
+			if (root->parent->right == root)
+				root->parent->right = root->left;
+			else
+				root->parent->left = root->left;
+			root->left->parent = root->parent;
+		}
+		free(root);
+		return (0);
+	}
+	else
+	{
+		new_value = successor(root->right);
+		root->n = new_value;
+		return (new_value);
+	}
+}
+/**
+ * bst_remove - remove a node from a BST tree
+ * @root: root of the tree
+ * @value: node with this value to remove
+ * Return: the tree changed
+ */
+bst_t *bst_remove(bst_t *root, int value)
+{
+	int type = 0;
+
+	if (root == NULL)
+		return (NULL);
+	if (value < root->n)
+		bst_remove(root->left, value);
+	else if (value > root->n)
+		bst_remove(root->right, value);
+	else if (value == root->n)
+	{
+		type = remove_type(root);
+		if (type != 0)
+			bst_remove(root->right, type);
+	}
+	else
+		return (NULL);
+	return (root);
+}
+
+/**
+ * avl_remove - remove a node from a AVL tree
+ * @root: root of the tree
+ * @value: node with this value to remove
+ * Return: the tree changed
+ */
+avl_t *avl_remove(avl_t *root, int value)
+{
+	avl_t *root_a = (avl_t *) bst_remove((bst_t *) root, value);
+
+	if (root_a == NULL)
+		return (NULL);
+	bal(&root_a);
+	return (root_a);
 }
